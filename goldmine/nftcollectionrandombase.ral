@@ -1,0 +1,112 @@
+Abstract Contract NFTPublicSaleCollectionRandomBase(
+    nftTemplateId: ByteVec,
+    collectionUri: ByteVec,
+    collectionOwner: Address,
+    goldLPID: ByteVec,
+    mut nftBaseUri: ByteVec,
+    mut maxSupply: U256,
+    mut maxmaxnumber: U256,
+    mut mintPrice: U256,
+    mut totalSupply: U256
+) extends NFTCollectionBase(collectionUri, totalSupply), NFTPublicSaleCollectionBase(nftBaseUri, maxSupply, mintPrice) {
+   event Mint(minter: Address, index: U256)
+
+    @using(preapprovedAssets = true, updateFields = true, assetsInContract = true, checkExternalCaller = false)
+    pub fn mint(lockedasset: U256, stakedGold: U256) -> (ByteVec) {
+    
+        let minter = callerAddress!()
+
+        let timenow = blockTimeStamp!()
+
+        let evolveStage = 0
+
+
+        let mut index = (u256From32Byte!(blake2b!(toByteVec!(blockTarget!()) ++ toByteVec!(blockTimeStamp!()))) % maxSupply)
+        let mut path = toByteVec!(index)
+
+        while (contractExists!(subContractId!(path)) == true ) {
+            maxmaxnumber = maxmaxnumber - 1
+            index = maxmaxnumber
+            path = toByteVec!(index)
+        }
+
+        let uri = getNFTUri(index, nftBaseUri)
+
+
+        let (encodeImmutableFields, encodeMutableFields) = NFT.encodeFields!(selfContractId!(), index, minter, uri, stakedGold, timenow, timenow, timenow, evolveStage)
+
+
+        let contractId = copyCreateSubContractWithToken!{minter -> ALPH: lockedasset}(
+            path,
+            nftTemplateId,
+            encodeImmutableFields,
+            encodeMutableFields,
+            1,
+            minter
+        )
+
+        transferTokenToSelf!(minter, goldLPID, stakedGold)
+
+        transferTokenToSelf!(minter, ALPH, mintPrice)
+        totalSupply = totalSupply + 1
+        emit Mint(minter, index)
+        return contractId
+    }
+
+
+
+    @using(preapprovedAssets = true, updateFields = true, assetsInContract = true, checkExternalCaller = false)
+    pub fn mintWithoutGoldLP(lockedasset: U256) -> (ByteVec) {
+    
+        let stakedGold = 0
+        
+        let minter = callerAddress!()
+
+        let timenow = blockTimeStamp!()
+
+        let evolveStage = 0
+
+
+        let mut index = (u256From32Byte!(blake2b!(toByteVec!(blockTarget!()) ++ toByteVec!(blockTimeStamp!()))) % maxSupply)
+        let mut path = toByteVec!(index)
+
+        while (contractExists!(subContractId!(path)) == true ) {
+            maxmaxnumber = maxmaxnumber - 1
+            index = maxmaxnumber
+            path = toByteVec!(index)
+        }
+
+        let uri = getNFTUri(index, nftBaseUri)
+
+
+        let (encodeImmutableFields, encodeMutableFields) = NFT.encodeFields!(selfContractId!(), index, minter, uri, stakedGold, timenow, timenow, timenow, evolveStage)
+
+
+        let contractId = copyCreateSubContractWithToken!{minter -> ALPH: lockedasset}(
+            path,
+            nftTemplateId,
+            encodeImmutableFields,
+            encodeMutableFields,
+            1,
+            minter
+        )
+
+        transferTokenToSelf!(minter, ALPH, mintPrice)
+        totalSupply = totalSupply + 1
+        emit Mint(minter, index)
+        return contractId
+    }
+
+
+
+
+    pub fn getCollectionOwner() -> Address {
+        return collectionOwner
+    }
+
+    pub fn getMaxSupply() -> U256 {
+        return maxSupply
+    }
+
+
+}

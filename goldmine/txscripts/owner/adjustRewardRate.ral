@@ -1,0 +1,6 @@
+TxScript AdjustRewardRate(
+    newrewardrate: U256,
+    nftCollectionId: ByteVec
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).adjustRewardRate(newrewardrate)
+}

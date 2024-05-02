@@ -1,0 +1,6 @@
+TxScript GetStakingRewards(
+    nftCollectionId: ByteVec,
+    accountId: ByteVec
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).getRewards(accountId)
+}

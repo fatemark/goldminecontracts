@@ -1,0 +1,7 @@
+TxScript UnStake(
+    nftCollectionId: ByteVec,
+    accountId: ByteVec,
+    amount: U256
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).unStake(accountId, amount)
+}

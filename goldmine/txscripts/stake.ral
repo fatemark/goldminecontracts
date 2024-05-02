@@ -1,0 +1,8 @@
+TxScript Stake(
+    nftCollectionId: ByteVec,
+    accountId: ByteVec,
+    amount: U256,
+    goldLPID: ByteVec
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).stake{callerAddress!() -> goldLPID: amount}(accountId, amount)
+}

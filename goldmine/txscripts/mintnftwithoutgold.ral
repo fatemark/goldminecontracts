@@ -1,0 +1,8 @@
+TxScript MintWithoutGoldLP(
+    lockedasset: U256,
+    nftCollectionId: ByteVec,
+    mintPrice: U256
+) {
+    let price = mintPrice + lockedasset
+    let _ = NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).mintWithoutGoldLP{callerAddress!() -> ALPH: price}(lockedasset)
+}

@@ -1,0 +1,7 @@
+TxScript ChangeEvolutionUri(
+    nftCollectionId: ByteVec,
+    evolveStage: U256,
+    newUri: ByteVec
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).changeEvolutionUri(evolveStage, newUri)
+}

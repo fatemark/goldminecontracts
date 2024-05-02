@@ -1,0 +1,7 @@
+TxScript ChangeEvolvePriceMax(
+    nftCollectionId: ByteVec,
+    newPrice: U256,
+    newMaxEvolvedStage: U256
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).changeEvolvePriceAndMaxEvolution(newPrice, newMaxEvolvedStage)
+}

@@ -1,0 +1,7 @@
+TxScript ConfirmURIS(
+    nftCollectionId: ByteVec,
+    startindex: U256,
+    endindex: U256
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).confirmURIS(startindex, endindex)
+}

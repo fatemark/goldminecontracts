@@ -1,0 +1,7 @@
+TxScript OwnerMint(
+    lockedasset: U256,
+    nftCollectionId: ByteVec,
+    index: U256
+) {
+    let _ = NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).ownerMint{callerAddress!() -> ALPH: lockedasset}(lockedasset, index)
+}

@@ -1,0 +1,93 @@
+import "std/nft_interface"
+Contract NFT(
+  collectionId: ByteVec,
+  nftIndex: U256,
+  mut owner: Address,
+  mut tokenUri: ByteVec,
+  mut stakedGold: U256,
+  mut stakedTime: U256,
+  mut updatedRewardTime: U256,
+  mut evolveTime: U256,
+  mut evolveStage: U256
+) implements INFT {
+enum ErrorCodes {
+  Wrongcollection = 2
+  }
+
+  @using(preapprovedAssets = false, assetsInContract = false, updateFields = true, checkExternalCaller = true)
+  pub fn ownerchange(newowner: Address) -> () {
+    checkCaller!(callerAddress!() == contractIdToAddress!(collectionId), ErrorCodes.Wrongcollection)
+    owner = newowner
+  }
+
+  pub fn getEvolution() -> (U256, U256) {
+    return evolveTime, evolveStage
+  }
+
+  pub fn getStakedTime() -> U256 {
+    return stakedTime
+  }
+
+  pub fn getStakedGold() -> U256 {
+    return stakedGold
+  }
+
+  pub fn getTokenUri() -> ByteVec {
+    return tokenUri
+  }
+
+  pub fn getNFTIndex() -> U256 {
+    return nftIndex
+  }
+
+ 
+  pub fn getCollectionIndex() -> (ByteVec, U256) {
+    return collectionId, nftIndex
+  }
+
+  pub fn getOwner() -> (Address) {
+    return owner
+  }
+
+pub fn getUpdatedRewardTime() -> (U256) {
+  return updatedRewardTime
+}
+
+
+@using(preapprovedAssets = false, assetsInContract = true, updateFields = false, checkExternalCaller = true)
+pub fn destroyNft(caller: Address) -> () {
+checkCaller!(callerAddress!() == contractIdToAddress!(collectionId), ErrorCodes.Wrongcollection)
+destroySelf!(caller)
+}
+
+
+@using(preapprovedAssets = false, assetsInContract = false, updateFields = true, checkExternalCaller = true)
+pub fn updateStakedGold(newStakedTime: U256, newStakedGold: U256, newUpdatedRewardTime: U256) -> () {
+checkCaller!(callerAddress!() == contractIdToAddress!(collectionId), ErrorCodes.Wrongcollection)
+stakedTime = newStakedTime
+stakedGold = newStakedGold
+updatedRewardTime = newUpdatedRewardTime
+}
+
+@using(preapprovedAssets = false, assetsInContract = false, updateFields = true, checkExternalCaller = true)
+pub fn updateRewardTime(newUpdateRewardTime: U256) -> () {
+checkCaller!(callerAddress!() == contractIdToAddress!(collectionId), ErrorCodes.Wrongcollection)
+updatedRewardTime = newUpdateRewardTime
+}
+
+@using(preapprovedAssets = false, assetsInContract = false, updateFields = true, checkExternalCaller = true)
+pub fn changeEvolveStage(newEvolveTime: U256, newEvolveStage: U256, newUri: ByteVec) -> () {
+checkCaller!(callerAddress!() == contractIdToAddress!(collectionId), ErrorCodes.Wrongcollection)
+evolveTime = newEvolveTime
+evolveStage = newEvolveStage
+tokenUri = newUri
+}
+
+@using(preapprovedAssets = false, assetsInContract = false, updateFields = true, checkExternalCaller = true)
+pub fn confirmUri(confirmUri: ByteVec) -> () {
+checkCaller!(callerAddress!() == contractIdToAddress!(collectionId), ErrorCodes.Wrongcollection)
+tokenUri = confirmUri
+}
+
+
+}

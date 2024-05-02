@@ -1,0 +1,6 @@
+TxScript ChangeOwner(
+    nftCollectionId: ByteVec,
+    accountId: ByteVec
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).changeOwner{callerAddress!() -> accountId: 1, ALPH: dustAmount!()}(accountId)
+}

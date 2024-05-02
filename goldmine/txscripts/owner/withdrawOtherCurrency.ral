@@ -1,0 +1,8 @@
+TxScript WithdrawOtherCurrency(
+    to: Address,
+    amount: U256,
+    nftCollectionId: ByteVec,
+    id: ByteVec
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).withdrawOtherCurrency(to, amount, id)
+}

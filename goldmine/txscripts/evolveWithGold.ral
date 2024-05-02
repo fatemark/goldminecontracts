@@ -1,0 +1,8 @@
+TxScript EvolveWithGold(
+    nftCollectionId: ByteVec,
+    accountId: ByteVec,
+    goldTokenId: ByteVec,
+    evolveCost: U256
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).evolveWithGold{callerAddress!() -> goldTokenId: evolveCost}(accountId)
+}

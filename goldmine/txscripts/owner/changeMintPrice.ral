@@ -1,0 +1,6 @@
+TxScript ChangeMintPrice(
+    nftCollectionId: ByteVec,
+    newPrice: U256
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).changeMintPrice(newPrice)
+}

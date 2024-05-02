@@ -1,0 +1,7 @@
+TxScript DepositGold(
+    amount: U256,
+    nftCollectionId: ByteVec,
+    goldTokenId: ByteVec
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).depositGold{callerAddress!() -> goldTokenId: amount}(amount)
+}

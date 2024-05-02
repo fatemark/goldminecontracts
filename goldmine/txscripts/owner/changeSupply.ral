@@ -1,0 +1,7 @@
+TxScript ChangeSupply(
+    nftCollectionId: ByteVec,
+    newMaxSupply: U256,
+    newMaxmaxnumber: U256
+) {
+    NFTPublicSaleCollectionRandomWithRoyalty(nftCollectionId).changeSupply(newMaxSupply, newMaxmaxnumber)
+}

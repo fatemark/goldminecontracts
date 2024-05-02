@@ -1,0 +1,479 @@
+import "std/nft_collection_with_royalty_interface"
+
+Contract NFTPublicSaleCollectionRandomWithRoyalty(
+    nftTemplateId: ByteVec,
+    collectionUri: ByteVec,
+    collectionOwner: Address,
+    royaltyRate: U256,
+    goldLPID: ByteVec,
+    goldTokenId: ByteVec,
+    mut nftBaseUri: ByteVec,
+    mut maxSupply: U256,
+    mut maxmaxnumber: U256,
+    mut mintPrice: U256,
+    mut totalSupply: U256,
+    mut evolvePrice: U256,
+    mut maxEvolvedStage: U256,
+    mut firstEvolutionUri: ByteVec,
+    mut secondEvolutionUri: ByteVec,
+    mut thirdEvolutionUri: ByteVec,
+    mut fourthEvolutionUri: ByteVec,
+    mut fifthEvolutionUri: ByteVec,
+    mut sixthEvolutionUri: ByteVec,
+    mut seventhEvolutionUri: ByteVec,
+    mut eightEvolutionUri: ByteVec,
+    mut ninthEvolutionUri: ByteVec,
+    mut tenthEvolutionUri: ByteVec,
+    mut elventhEvolutionUri: ByteVec,
+    mut twelvethEvolutionUri: ByteVec,
+    mut thirteenthEvolutionUri: ByteVec,
+    mut fourteenthEvolutionUri: ByteVec,
+    mut fifteenthEvolutionUri: ByteVec,
+    mut rewardrate: U256
+) extends NFTPublicSaleCollectionRandomBase(nftTemplateId, collectionUri, collectionOwner, goldLPID, nftBaseUri, maxSupply, maxmaxnumber, mintPrice, totalSupply)
+    implements INFTCollectionWithRoyalty {
+
+    enum ErrorCodes {
+        NotCollectionOwner = 514
+        NotNftOwner = 515
+        NotEnoughBalance = 516
+        CannotEvolve = 517
+        MaxEvolved = 518
+    }   
+
+    pub fn royaltyAmount(@unused tokenId: ByteVec, salePrice: U256) -> (U256) {
+        return salePrice * royaltyRate / 10000
+    }
+
+    @using(assetsInContract = true, preapprovedAssets = true, checkExternalCaller = false)
+    pub fn depositGold(amount: U256) -> () {
+        transferTokenToSelf!(callerAddress!(), goldTokenId, amount)
+    }
+
+    @using(updateFields = true, checkExternalCaller = true)
+    pub fn adjustRewardRate(newrewardrate: U256) -> (){
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+        rewardrate = newrewardrate
+    }
+
+    @using(updateFields = true, checkExternalCaller = true)
+    pub fn changeSupply(newMaxSupply: U256, newMaxmaxnumber: U256) -> () {
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+        maxSupply = newMaxSupply
+        maxmaxnumber = newMaxmaxnumber
+    }
+
+    @using(updateFields = true, checkExternalCaller = true)
+    pub fn changeEvolvePriceAndMaxEvolution(newPrice: U256, newMaxEvolvedStage: U256) -> () {
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+        evolvePrice = newPrice
+        maxEvolvedStage = newMaxEvolvedStage
+    }
+
+    @using(assetsInContract = true, preapprovedAssets = true, checkExternalCaller = false)
+    pub fn payRoyalty(payer: Address, amount: U256) -> () {
+        transferTokenToSelf!(payer, ALPH, amount)
+    }
+
+    @using(checkExternalCaller = false)
+    pub fn withdrawRoyalty(to: Address, amount: U256) -> () {
+        withdraw(to, amount)
+    }
+
+    @using(preapprovedAssets = true, assetsInContract = true, checkExternalCaller = false, updateFields = false)
+    pub fn destroyNft(
+        nftId: ByteVec
+        ) -> () {
+        
+        let index = NFT(nftId).getNFTIndex()
+
+        let stakedGold = NFT(nftId).getStakedGold()    
+        transferTokenFromSelf!(callerAddress!(), goldLPID, stakedGold)
+        
+
+        validateNFT(nftId, index)
+
+        NFT(nftId).destroyNft(callerAddress!())
+        burnToken!(callerAddress!(), nftId, 1)
+        
+    }
+
+    @using(preapprovedAssets = false, assetsInContract = true, updateFields = false, checkExternalCaller = true)
+    pub fn destroyCollection() -> () {
+    checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+    destroySelf!(collectionOwner)
+    }
+
+    @using(preapprovedAssets = false, assetsInContract = false, checkExternalCaller = true, updateFields = true)
+    pub fn changeMintPrice(newMintPrice: U256) -> () {
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+        mintPrice = newMintPrice
+    }
+
+
+@using(preapprovedAssets = true, assetsInContract = true, checkExternalCaller = true, updateFields = false)
+pub fn stake(accountId: ByteVec, amount: U256) -> () {
+    let owner = NFT(accountId).getOwner()
+    checkCaller!(callerAddress!() == owner, ErrorCodes.NotNftOwner)
+    
+    transferTokenToSelf!(owner, goldLPID, amount)
+    let stakedGold = NFT(accountId).getStakedGold()
+    let stakedTime = NFT(accountId).getStakedTime()
+    let updatedRewardTime = NFT(accountId).getUpdatedRewardTime()
+
+    let timenow = blockTimeStamp!()
+
+    let newStakedGold = stakedGold + amount
+
+    let mut newStakedTime = timenow
+    if (stakedGold == 0)
+        {newStakedTime = timenow}
+    else
+    {newStakedTime = (stakedGold * stakedTime + amount * timenow) / (newStakedGold)}
+
+    let mut newUpdatedRewardTime = timenow
+    if (stakedGold == 0){
+        newUpdatedRewardTime = timenow
+    }
+    else
+    {newUpdatedRewardTime = (stakedGold * updatedRewardTime + amount * timenow) / (newStakedGold)}
+
+    NFT(accountId).updateStakedGold(newStakedTime, newStakedGold, newUpdatedRewardTime)
+}
+
+
+@using(preapprovedAssets = false, assetsInContract = true, checkExternalCaller = true, updateFields = false)
+pub fn unStake(accountId: ByteVec, amount: U256) -> () {
+    let owner = NFT(accountId).getOwner()
+    checkCaller!(callerAddress!() == owner, ErrorCodes.NotNftOwner)
+    
+
+    let stakedGold = NFT(accountId).getStakedGold()
+    let stakedTime = NFT(accountId).getStakedTime()
+    let updatedRewardTime = NFT(accountId).getUpdatedRewardTime()
+
+    assert!(stakedGold >= amount, ErrorCodes.NotEnoughBalance)
+
+    transferTokenFromSelf!(owner, goldLPID, amount)
+
+    let newStakedGold = stakedGold - amount
+
+    NFT(accountId).updateStakedGold(stakedTime, newStakedGold, updatedRewardTime)
+}
+
+
+@using(preapprovedAssets = false, assetsInContract = true, checkExternalCaller = true, updateFields = false)
+pub fn getRewards(accountId: ByteVec) -> () {
+    let owner = NFT(accountId).getOwner()
+    checkCaller!(callerAddress!() == owner, ErrorCodes.NotNftOwner)
+    
+    let stakedGold = NFT(accountId).getStakedGold()
+    let stakedTime = NFT(accountId).getStakedTime()
+    let (_, evolveStage) = NFT(accountId).getEvolution()
+
+    let updatedRewardTime = NFT(accountId).getUpdatedRewardTime()
+
+
+    let timenow = blockTimeStamp!()
+
+    let timedelta = timenow - stakedTime
+
+    let monthMultiplier = getMonthMultiplier(timedelta)
+
+    let multiplierwithevolvestage = monthMultiplier + 490000000000000 * evolveStage
+
+    let truerate = rewardrate - multiplierwithevolvestage
+
+    let earntimedelta = timenow - updatedRewardTime
+
+    let stakewithtime = earntimedelta * stakedGold
+
+    let rewards = stakewithtime / truerate
+
+
+    transferTokenFromSelf!(owner, goldTokenId, rewards)
+
+    NFT(accountId).updateRewardTime(timenow)
+}
+
+fn getMonthMultiplier(timedelta: U256) -> U256 {
+    let multiplier =
+    if (timedelta > 11e8)
+    6000000000000000
+    else if (timedelta > 7.7e8)
+    5000000000000000
+    else if (timedelta > 5.38e8)
+    4000000000000000
+    else if (timedelta > 2.67e8)
+    3000000000000000
+    else
+    0
+
+    return multiplier
+}
+
+@using(checkExternalCaller = true, preapprovedAssets = true, assetsInContract = true)
+pub fn evolve(accountId: ByteVec) -> () {
+    let owner = NFT(accountId).getOwner()
+    let index = NFT(accountId).getNFTIndex()
+
+    checkCaller!(callerAddress!() == owner, ErrorCodes.NotNftOwner)
+
+    let (evolvetime, evolveStage) = NFT(accountId).getEvolution()
+    let timenow = blockTimeStamp!()
+    let timedelta = timenow - evolvetime
+    let timeToEvolve = (1 + evolveStage * 2) * 44e8
+    assert!(timedelta > timeToEvolve, ErrorCodes.CannotEvolve)
+
+    assert!(evolveStage < maxEvolvedStage, ErrorCodes.MaxEvolved)
+
+    let newEvolveStage = evolveStage + 1
+    let newUri = getNewUri(newEvolveStage, index)
+
+    transferTokenToSelf!(owner, goldTokenId, evolvePrice)
+
+    NFT(accountId).changeEvolveStage(timenow, newEvolveStage, newUri)
+}
+
+
+@using(checkExternalCaller = true, preapprovedAssets = true, assetsInContract = true)
+pub fn evolveWithGold(accountId: ByteVec) -> () {
+    let owner = NFT(accountId).getOwner()
+    let index = NFT(accountId).getNFTIndex()
+
+    checkCaller!(callerAddress!() == owner, ErrorCodes.NotNftOwner)
+
+    let (_, evolveStage) = NFT(accountId).getEvolution()
+    let timenow = blockTimeStamp!()
+
+    let accelerateEvolvePrice = 2 * evolvePrice + evolvePrice * evolveStage * 2
+
+
+    assert!(evolveStage < maxEvolvedStage, ErrorCodes.MaxEvolved)
+
+    let newEvolveStage = evolveStage + 1
+    let newUri = getNewUri(newEvolveStage, index)
+
+
+    transferTokenToSelf!(owner, goldTokenId, accelerateEvolvePrice)
+
+    NFT(accountId).changeEvolveStage(timenow, newEvolveStage, newUri)
+}
+
+
+
+fn getNewUri(evolveStage: U256, index: U256) -> ByteVec {
+    let newBaseUri =
+        if (evolveStage == 1)
+            firstEvolutionUri
+        else if (evolveStage == 2)
+            secondEvolutionUri
+        else if (evolveStage == 3)
+            thirdEvolutionUri
+        else if (evolveStage == 4)
+            fourthEvolutionUri
+        else if (evolveStage == 5)
+            fifthEvolutionUri
+        else if (evolveStage == 6)
+            sixthEvolutionUri
+        else if (evolveStage == 7)
+            seventhEvolutionUri
+        else if (evolveStage == 8)
+            eightEvolutionUri
+        else if (evolveStage == 9)
+            ninthEvolutionUri
+        else if (evolveStage == 10)
+            tenthEvolutionUri
+        else if (evolveStage == 11)
+            elventhEvolutionUri
+        else if (evolveStage == 12)
+            twelvethEvolutionUri
+        else if (evolveStage == 13)
+            thirteenthEvolutionUri
+        else if (evolveStage == 14)
+            fourteenthEvolutionUri
+        else if (evolveStage == 15)
+            fifteenthEvolutionUri
+        else
+            nftBaseUri
+
+
+        let newUri = getNFTUri(index, newBaseUri)
+
+        return newUri
+    }
+
+    @using(updateFields = true, checkExternalCaller = true)
+    pub fn changeEvolutionUri(evolveStage: U256, newUri: ByteVec) -> () {
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+            if (evolveStage == 0)
+            {nftBaseUri = newUri}
+            else if (evolveStage == 1)
+            {firstEvolutionUri = newUri}
+            else if (evolveStage == 2)
+            {secondEvolutionUri = newUri}
+            else if (evolveStage == 3)
+            {thirdEvolutionUri = newUri}
+            else if (evolveStage == 4)
+            {fourthEvolutionUri = newUri}
+            else if (evolveStage == 5)
+            {fifthEvolutionUri = newUri}
+            else if (evolveStage == 6)
+            {sixthEvolutionUri = newUri}
+            else if (evolveStage == 7)
+            {seventhEvolutionUri = newUri}
+            else if (evolveStage == 8)
+            {eightEvolutionUri = newUri}
+            else if (evolveStage == 9)
+            {ninthEvolutionUri = newUri}
+            else if (evolveStage == 10)
+            {tenthEvolutionUri = newUri}
+            else if (evolveStage == 11)
+            {elventhEvolutionUri = newUri}
+            else if (evolveStage == 12)
+            {twelvethEvolutionUri = newUri}
+            else if (evolveStage == 13)
+            {thirteenthEvolutionUri = newUri}
+            else if (evolveStage == 14)
+            {fourteenthEvolutionUri = newUri}
+            else if (evolveStage == 15)
+            {fifteenthEvolutionUri = newUri}
+            else
+            {firstEvolutionUri = firstEvolutionUri}
+    
+
+        }
+
+
+
+
+
+        @using(preapprovedAssets = true, updateFields = true, assetsInContract = false, checkExternalCaller = false)
+        pub fn ownerMint(lockedasset: U256, index: U256) -> (ByteVec) {
+            checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+
+            let stakedGold = 0
+
+            let minter = callerAddress!()
+    
+            let timenow = blockTimeStamp!()
+    
+            let evolveStage = 0
+            
+            let path = toByteVec!(index)
+    
+            let uri = getNFTUri(index, nftBaseUri)
+    
+    
+            let (encodeImmutableFields, encodeMutableFields) = NFT.encodeFields!(selfContractId!(), index, minter, uri, stakedGold, timenow, timenow, timenow, evolveStage)
+    
+    
+            let contractId = copyCreateSubContractWithToken!{minter -> ALPH: lockedasset}(
+                path,
+                nftTemplateId,
+                encodeImmutableFields,
+                encodeMutableFields,
+                1,
+                minter
+            )
+    
+            totalSupply = totalSupply + 1
+            emit Mint(minter, index)
+            return contractId
+        }
+
+
+
+    @using(preapprovedAssets = true, assetsInContract = false, checkExternalCaller = false)
+    pub fn changeOwner(
+        accountId: ByteVec
+        ) -> () {
+    
+        let owner = callerAddress!()
+        
+        let timeuntil = blockTimeStamp!() + 15000
+        lockApprovedAssets!{owner -> accountId: 1, ALPH: dustAmount!()}(owner, timeuntil)
+    
+        NFT(accountId).ownerchange(owner)
+    }
+
+
+        @using(preapprovedAssets = true, assetsInContract = false, checkExternalCaller = false, updateFields = false)
+        pub fn destroyNftAndReturnIt(
+            accountId: ByteVec, lockedasset: U256) -> () {
+
+                NFT(accountId).destroyNft(callerAddress!())
+                burnToken!(callerAddress!(), accountId, 1)
+
+                let index = NFT(accountId).getNFTIndex()
+                let minter = callerAddress!()
+                let uri = NFT(accountId).getTokenUri()
+                let stakedGold = NFT(accountId).getStakedGold()
+                let stakedTime = NFT(accountId).getStakedTime()
+                let updatedRewardTime = NFT(accountId).getUpdatedRewardTime()
+
+                let (evolveTime, evolveStage) = NFT(accountId).getEvolution()
+                let path = toByteVec!(index)
+
+                let (encodeImmutableFields, encodeMutableFields) = NFT.encodeFields!(selfContractId!(), index, minter, uri, stakedGold, stakedTime, updatedRewardTime, evolveTime, evolveStage)
+    
+    
+                let _ = copyCreateSubContractWithToken!{minter -> ALPH: lockedasset}(
+                    path,
+                    nftTemplateId,
+                    encodeImmutableFields,
+                    encodeMutableFields,
+                    1,
+                    minter
+                )
+
+                
+            }
+
+
+    @using(preapprovedAssets = false, assetsInContract = false, checkExternalCaller = true, updateFields = false)       
+    pub fn confirmURIS(startindex: U256, endindex: U256) -> () {
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.NotCollectionOwner)
+
+        let mut startnumber = startindex
+
+        while(startnumber <= endindex){
+
+            let accountId = subContractId!(toByteVec!(startnumber))
+
+            if (contractExists!(accountId) == true) {
+
+            let (_, evolveStage) = NFT(accountId).getEvolution()
+
+            let confirmedUri = getNewUri(evolveStage, startnumber)
+
+            NFT(accountId).confirmUri(confirmedUri)
+
+            startnumber = startnumber + 1
+            }
+            else {
+            startnumber = startnumber + 1
+            }
+        }
+
+    }
+
+
+    @using(assetsInContract = true, checkExternalCaller = true)
+    pub fn withdrawOtherCurrency(to: Address, amount: U256, id: ByteVec) -> () {
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.CollectionOwnerAllowedOnly)
+        transferTokenFromSelf!(to, id, amount)
+    }
+
+    @using(assetsInContract = false, checkExternalCaller = true, updateFields = true)
+    pub fn migrate(newBytecode:ByteVec, newEncodedImmFields:ByteVec, newEncodedMutFields:ByteVec) -> () {
+    
+    migrateWithFields!(newBytecode, newEncodedImmFields, newEncodedMutFields)
+        
+        checkCaller!(callerAddress!() == collectionOwner, ErrorCodes.CollectionOwnerAllowedOnly)
+    }
+
+
+
+}
+
